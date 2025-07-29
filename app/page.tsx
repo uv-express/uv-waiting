@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Play, ArrowRight, CheckCircle, X } from "lucide-react"
+import { toast } from "sonner"
 import { AnimatedBackground } from "./components/animated-background"
 import { VideoModal } from "./components/video-modal"
 
@@ -51,11 +52,11 @@ export default function WaitlistPage() {
         setIsSuccess(true)
         setEmail("")
       } else {
-        alert(data.message || "Something went wrong. Please try again.")
+        toast.error(data.message || "Something went wrong. Please try again.")
       }
     } catch (error) {
       console.error("Error submitting email:", error)
-      alert("Something went wrong. Please try again.")
+      toast.error("Something went wrong. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
