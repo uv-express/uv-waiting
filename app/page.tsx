@@ -5,7 +5,9 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Play, ArrowRight } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
+import { Play, ArrowRight, CheckCircle, X } from "lucide-react"
 import { AnimatedBackground } from "./components/animated-background"
 import { VideoModal } from "./components/video-modal"
 
@@ -14,6 +16,14 @@ export default function WaitlistPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [showPrivacyNotice, setShowPrivacyNotice] = useState(true)
+  const [showCookieModal, setShowCookieModal] = useState(false)
+  const [cookieSettings, setCookieSettings] = useState({
+    essential: true,
+    analytics: false,
+    marketing: false
+  })
 
   useEffect(() => {
     setIsVisible(true)
@@ -23,19 +33,115 @@ export default function WaitlistPage() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // TODO: Replace with actual API call
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log("Email submitted:", email)
-      alert("Thank you for joining our waitlist!")
-      setEmail("")
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/waitlist`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          projectName: "uv-express"
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setIsSuccess(true)
+        setEmail("")
+      } else {
+        alert(data.message || "Something went wrong. Please try again.")
+      }
     } catch (error) {
       console.error("Error submitting email:", error)
       alert("Something went wrong. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col">
+        <AnimatedBackground />
+        
+        {/* Success Page */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-8">
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="mb-8">
+              <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
+              <h1 className="text-4xl md:text-6xl font-bold mb-6">You're In!</h1>
+              <p className="text-xl text-gray-300 mb-8">
+                Thank you for joining the UV Express waitlist. We'll keep you updated on our progress and let you know as soon as we're ready to launch.
+              </p>
+              <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-6 mb-8">
+                <h3 className="text-lg font-semibold mb-2 text-orange-500">What's Next?</h3>
+                <ul className="text-gray-300 text-left space-y-2">
+                  <li>• We'll send you updates on our development progress</li>
+                  <li>• You'll be among the first to know when we launch</li>
+                  <li>• Early access to exclusive features and benefits</li>
+                </ul>
+              </div>
+              <Button
+                onClick={() => setIsSuccess(false)}
+                className="bg-transparent border border-gray-600 text-white hover:bg-gray-800 rounded-full px-8 py-3"
+              >
+                Back to Home
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Privacy Notice */}
+        {showPrivacyNotice && (
+          <div className="relative z-10 p-6 border-t border-gray-800">
+            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div className="flex-1">
+                <h4 className="text-white font-medium mb-1">We value your privacy</h4>
+                <p className="text-gray-400 text-sm max-w-2xl">
+                  This website uses cookies to enhance your browsing experience, serve personalized ads or content, and
+                  analyze our traffic.
+                </p>
+              </div>
+              <div className="flex gap-3 items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCookieModal(true)}
+                  className="rounded-full border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
+                >
+                  Cookie Settings
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPrivacyNotice(false)}
+                  className="rounded-full border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
+                >
+                  Reject All
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => setShowPrivacyNotice(false)}
+                  className="rounded-full bg-white text-black hover:bg-gray-200"
+                >
+                  Accept All
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPrivacyNotice(false)}
+                  className="text-gray-400 hover:text-white p-1"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -130,36 +236,128 @@ export default function WaitlistPage() {
       </div>
 
       {/* Privacy Notice */}
-      <div className="relative z-10 p-6 border-t border-gray-800">
-        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div>
-            <h4 className="text-white font-medium mb-1">We value your privacy</h4>
-            <p className="text-gray-400 text-sm max-w-2xl">
-              This website uses cookies to enhance your browsing experience, serve personalized ads or content, and
-              analyze our traffic.
-            </p>
+      {showPrivacyNotice && (
+        <div className="relative z-10 p-6 border-t border-gray-800">
+          <div className="max-w-6xl mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex-1">
+              <h4 className="text-white font-medium mb-1">We value your privacy</h4>
+              <p className="text-gray-400 text-sm max-w-2xl">
+                This website uses cookies to enhance your browsing experience, serve personalized ads or content, and
+                analyze our traffic.
+              </p>
+            </div>
+            <div className="flex gap-3 items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCookieModal(true)}
+                className="rounded-full border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
+              >
+                Cookie Settings
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPrivacyNotice(false)}
+                className="rounded-full border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
+              >
+                Reject All
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={() => setShowPrivacyNotice(false)}
+                className="rounded-full bg-white text-black hover:bg-gray-200"
+              >
+                Accept All
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPrivacyNotice(false)}
+                className="text-gray-400 hover:text-white p-1"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-3">
+        </div>
+      )}
+
+      {/* Cookie Settings Modal */}
+      <Dialog open={showCookieModal} onOpenChange={setShowCookieModal}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold mb-4">Cookie Settings</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-semibold mb-2">Essential Cookies</h3>
+              <p className="text-gray-400 text-sm mb-3">
+                These cookies are necessary for the website to function and cannot be switched off.
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Always Active</span>
+                <Switch 
+                  checked={cookieSettings.essential} 
+                  disabled={true}
+                  className="data-[state=checked]:bg-green-500"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-2">Analytics Cookies</h3>
+              <p className="text-gray-400 text-sm mb-3">
+                These cookies help us understand how visitors interact with our website.
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Optional</span>
+                <Switch 
+                  checked={cookieSettings.analytics}
+                  onCheckedChange={(checked) => setCookieSettings({...cookieSettings, analytics: checked})}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-2">Marketing Cookies</h3>
+              <p className="text-gray-400 text-sm mb-3">
+                These cookies are used to deliver personalized ads and measure their effectiveness.
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Optional</span>
+                <Switch 
+                  checked={cookieSettings.marketing}
+                  onCheckedChange={(checked) => setCookieSettings({...cookieSettings, marketing: checked})}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-6 pt-4 border-t border-gray-700">
             <Button
               variant="outline"
-              size="sm"
-              className="rounded-full border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
+              onClick={() => {
+                setShowCookieModal(false)
+                setShowPrivacyNotice(false)
+              }}
+              className="flex-1 rounded-full border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
             >
-              Cookie Settings
+              Save Preferences
             </Button>
             <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
+              onClick={() => {
+                setCookieSettings({essential: true, analytics: true, marketing: true})
+                setShowCookieModal(false)
+                setShowPrivacyNotice(false)
+              }}
+              className="flex-1 rounded-full bg-white text-black hover:bg-gray-200"
             >
-              Reject All
-            </Button>
-            <Button size="sm" className="rounded-full bg-white text-black hover:bg-gray-200">
               Accept All
             </Button>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Video Modal */}
       <VideoModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
